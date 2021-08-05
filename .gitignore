@@ -1,1 +1,6 @@
 .vs
+.vscode
+**build**
+**Makefile**
+**bin**
+src/lib

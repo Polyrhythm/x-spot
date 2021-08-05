@@ -82,6 +82,7 @@ TM_DLL_EXPORT void tm_load_plugin(struct tm_api_registry_api* reg, bool load)
     tm_allocator_api = reg->get(TM_ALLOCATOR_API_NAME);
     task_system = reg->get(TM_TASK_SYSTEM_API_NAME);
     tm_scene_common_api = reg->get(TM_SCENE_COMMON_API_NAME);
+    tm_transform_component_api = reg->get(TM_TRANSFORM_COMPONENT_API_NAME);
 
     tm_graph_interpreter_api = reg->get(TM_GRAPH_INTERPRETER_API_NAME);
 

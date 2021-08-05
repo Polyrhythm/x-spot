@@ -150,6 +150,11 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
     tm_the_truth_api->commit(tt, entity_w, undo_scope);
     tm_scene_common_api->place_entity(tt, entity, local_transform, parent_entity, undo_scope);
 
+    // add child
+    {
+       const tm_tt_id_t child_e = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope); 
+    }
+
     undo_stack->add(undo_stack->inst, tt, undo_scope);
 
     return entity;

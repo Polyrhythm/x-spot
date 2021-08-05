@@ -67,6 +67,7 @@ enum {
 struct tm_dialogue_component_t {
     char* text;
     uint64_t size;
+    bool is_parsed;
 };
 
 typedef struct tm_component_manager_o {
@@ -374,6 +375,7 @@ static void component__create(struct tm_entity_context_o* ctx)
     *manager = (tm_component_manager_o){
         .ctx = ctx,
         .allocator = a,
+        .is_parsed = false,
     };
 
 	tm_component_i component = {
@@ -386,6 +388,18 @@ static void component__create(struct tm_entity_context_o* ctx)
     };
 
     tm_entity_api->register_component(ctx, &component);
+}
+
+static void create_underlings(tm_component_manager_o* man, tm_entity_context_o* ctx)
+{
+    tm_the_truth_o* tt = tm_entity_api->the_truth(ctx);
+    const tm_tt_undo_scope_t undo_scope = tm_the_truth_api->create_undo_scope(tt, TM_LOCALIZE_LATER("Create Entity from Dialogue Component"));
+    const tm_tt_type_t entity_type = tm_the_truth_api->optional_object_type_from_name_hash(tt, TM_TT_TYPE_HASH__ENTITY);
+    const tm_tt_id_t entity = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope);
+    tm_the_truth_object_o* entity_w = tm_the_truth_api->write(tt, entity);
+    tm_the_truth_api->set_string(tt, entity_w, TM_TT_PROP__ENTITY__NAME, "bob");
+
+    tm_the_truth_api->commit(tt, entity_w, undo_scope);
 }
 
 // Runs on (dialogue_component, transform_component)
@@ -404,16 +418,15 @@ static void engine_update__dialogue_component(tm_engine_o* inst, tm_engine_updat
     tm_component_type_t dialogue_type = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__DIALOGUE_COMPONENT);
 
     for (tm_engine_update_array_t* a = data->arrays; a < data->arrays + data->num_arrays; ++a) {
-        //struct tm_dialogue_component_t* dialogue_component = a->components[0];
-        //tm_transform_component_t* transform = a->components[1];
+        struct tm_dialogue_component_t* dialogue_component = a->components[0];
         tm_component_manager_o* man = tm_entity_api->component_manager(ctx, dialogue_type);
-        if (man->is_parsed)
+        if (!man->is_parsed)
         {
-            continue;
             tm_logger_api->printf(TM_LOG_TYPE_INFO, "dialogue component continue");
+            man->is_parsed = true;
+            continue;
         }
 
-        man->is_parsed = false;
         tm_logger_api->printf(TM_LOG_TYPE_INFO, "parse that shit");
 
         for (uint32_t i = 0; i < a->n; ++i) {
@@ -427,7 +440,10 @@ static void engine_update__dialogue_component(tm_engine_o* inst, tm_engine_updat
 
 static bool engine_filter__dialogue_component(tm_engine_o* inst, const tm_component_type_t* components, uint32_t num_components, const tm_component_mask_t* mask)
 {
-    return true;
+    struct tm_entity_context_o* ctx = (struct tm_entity_context_o*)inst;
+    tm_component_type_t dialogue_type = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__DIALOGUE_COMPONENT);
+    tm_component_manager_o* man = tm_entity_api->component_manager(ctx, dialogue_type);
+    return !man->is_parsed;
 }
 
 static void component__register_engine(struct tm_entity_context_o* ctx)
