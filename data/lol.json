@@ -1,0 +1,187 @@
+{
+	"title": "X_Spot",
+	"entry": 1,
+	"meta": {
+		"offline": true,
+		"remote": {
+
+		},
+		"rtl": false,
+		"last_save": {
+			"utc": {
+				"year": 2021,
+				"month": 7,
+				"day": 31,
+				"weekday": 6,
+				"dst": false,
+				"hour": 8,
+				"minute": 57,
+				"second": 38
+			},
+			"local": {
+				"year": 2021,
+				"month": 7,
+				"day": 31,
+				"weekday": 6,
+				"dst": false,
+				"hour": 17,
+				"minute": 57,
+				"second": 38
+			}
+		},
+		"arrow_editor_version": "1.4.0"
+	},
+	"next_resource_seed": 9,
+	"resources": {
+		"scenes": {
+			"0": {
+				"name": "Adventure Begins",
+				"entry": 1,
+				"map": {
+					"1": {
+						"offset": [
+							100,
+							100
+						],
+						"io": [
+							[
+								1,
+								0,
+								3,
+								0
+							]
+						]
+					},
+					"3": {
+						"offset": [
+							300,
+							150
+						],
+						"io": [
+							[
+								3,
+								0,
+								4,
+								0
+							]
+						]
+					},
+					"4": {
+						"offset": [
+							470,
+							190
+						],
+						"io": [
+							[
+								4,
+								0,
+								7,
+								0
+							],
+							[
+								4,
+								1,
+								8,
+								0
+							]
+						]
+					},
+					"7": {
+						"offset": [
+							790,
+							270
+						]
+					},
+					"8": {
+						"offset": [
+							800,
+							440
+						]
+					}
+				}
+			}
+		},
+		"nodes": {
+			"1": {
+				"type": "entry",
+				"name": "S0N0Ent",
+				"data": {
+					"plaque": "Start"
+				},
+				"notes": "The initial Entry point"
+			},
+			"3": {
+				"type": "content",
+				"name": "S0N3Cnt",
+				"data": {
+					"title": "Intro",
+					"content": "There is a hallway.",
+					"clear": false
+				}
+			},
+			"4": {
+				"type": "dialog",
+				"name": "S0N4Dlg",
+				"data": {
+					"character": 5,
+					"lines": [
+						"You see this note?",
+						"What are you reading?"
+					],
+					"playable": true
+				},
+				"ref": [
+					5
+				]
+			},
+			"7": {
+				"type": "dialog",
+				"name": "S0N7Dlg",
+				"data": {
+					"character": 6,
+					"lines": [
+						"Yeah."
+					],
+					"playable": false
+				},
+				"ref": [
+					6
+				]
+			},
+			"8": {
+				"type": "dialog",
+				"name": "S0N8Dlg",
+				"data": {
+					"character": 6,
+					"lines": [
+						"Harper's."
+					],
+					"playable": false
+				},
+				"ref": [
+					6
+				]
+			}
+		},
+		"variables": {
+
+		},
+		"characters": {
+			"5": {
+				"name": "Max",
+				"color": "f9122f",
+				"use": [
+					4
+				]
+			},
+			"6": {
+				"name": "Minnie",
+				"color": "4f80fe",
+				"use": [
+					7,
+					8
+				]
+			}
+		}
+	}
+}
