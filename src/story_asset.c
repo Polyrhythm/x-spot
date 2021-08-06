@@ -1,3 +1,5 @@
+struct tm_tag_component_api* tm_tag_component_api;
+
 #include "dialogue_component.h"
 #include "dialogue_loader.h"
 #include "story_asset.h"
@@ -22,6 +24,7 @@
 #include <foundation/undo.h>
 
 #include <plugins/entity/entity.h>
+#include <plugins/entity/tag_component.h>
 #include <plugins/editor_views/asset_browser.h>
 #include <plugins/editor_views/properties.h>
 #include <plugins/the_machinery_shared/asset_aspects.h>
@@ -342,7 +345,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 							tm_the_truth_api->commit(tt, line_next_e_w, undo_scope);
 							tm_scene_common_api->place_entity(tt, line_next_e, local_transform, node_line_e, undo_scope);
                         }
-						                    }
+					}
                 }
             }
 
@@ -432,6 +435,8 @@ static tm_asset_browser_create_asset_i asset_browser_create_dialogue_story = {
 
 void load_story_asset(struct tm_api_registry_api* reg, bool load)
 {
+    tm_tag_component_api = reg->get(TM_TAG_COMPONENT_API_NAME);
+
     tm_add_or_remove_implementation(reg, load, TM_THE_TRUTH_CREATE_TYPES_INTERFACE_NAME, truth__create_types);
     tm_add_or_remove_implementation(reg, load, TM_ASSET_BROWSER_CREATE_ASSET_INTERFACE_NAME, &asset_browser_create_dialogue_story);
 }
