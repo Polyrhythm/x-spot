@@ -143,12 +143,13 @@ static bool droppable(struct tm_asset_scene_o* inst, struct tm_the_truth_o* tt, 
     return true;
 }
 
-void add_node_cmp(struct tm_the_truth_o* tt, tm_the_truth_object_o* entity, const char* content, const tm_tt_undo_scope_t* undo_scope)
+void add_node_cmp(struct tm_the_truth_o* tt, tm_the_truth_object_o* entity, const char* name, const char* content, const tm_tt_undo_scope_t* undo_scope)
 {
     tm_tt_type_t story_node_type = tm_the_truth_api->object_type_from_name_hash(tt, TM_TT_TYPE_HASH__STORY_NODE_COMPONENT);
 
 	const tm_tt_id_t cmp = tm_the_truth_api->create_object_of_type(tt, story_node_type, *undo_scope);
 	tm_the_truth_object_o* cmp_w = tm_the_truth_api->write(tt, cmp);
+    tm_the_truth_api->set_string(tt, cmp_w, TM_TT_PROP__STORY_NODE_COMPONENT__NAME, name);
 	tm_the_truth_api->set_string(tt, cmp_w, TM_TT_PROP__STORY_NODE_COMPONENT__CONTENT, content);
 	tm_the_truth_api->add_to_subobject_set(tt, entity, TM_TT_PROP__ENTITY__COMPONENTS, &cmp_w, 1);
 	tm_the_truth_api->commit(tt, cmp_w, *undo_scope);
@@ -212,6 +213,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 		tm_tt_id_t scenes_root_e = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope);
         tm_the_truth_object_o* scenes_root_e_w = tm_the_truth_api->write(tt, scenes_root_e);
         tm_the_truth_api->set_string(tt, scenes_root_e_w, TM_TT_PROP__ENTITY__NAME, "scenes");
+        add_node_cmp(tt, scenes_root_e_w, "scenes", "", &undo_scope);
         tm_the_truth_api->commit(tt, scenes_root_e_w, undo_scope);
         tm_scene_common_api->place_entity(tt, scenes_root_e, local_transform, entity, undo_scope);
 
@@ -225,7 +227,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
             tm_the_truth_api->set_string(tt, scene_e_w, TM_TT_PROP__ENTITY__NAME, curr_scene);
 
             // add component
-            add_node_cmp(tt, scene_e_w, scene_name, &undo_scope);
+            add_node_cmp(tt, scene_e_w, curr_scene, scene_name, &undo_scope);
 
             tm_the_truth_api->commit(tt, scene_e_w, undo_scope);
             tm_scene_common_api->place_entity(tt, scene_e, local_transform, scenes_root_e, undo_scope);
@@ -256,7 +258,12 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
                 if (tm_strcmp_ignore_case(node_type, STORY_NODE_TYPE_CONTENT) == 0)
                 {
                     const char* content = cd->to_string(cd->inst, cd->object_get(cd->inst, node_data, TM_STATIC_HASH("content", 0x8f0e5bf58c4edcf6ULL)));
-                    add_node_cmp(tt, node_root_e_w, content, &undo_scope);
+                    add_node_cmp(tt, node_root_e_w, node_name, content, &undo_scope);
+                }
+                // entry or dialog
+                else
+                {
+                    add_node_cmp(tt, node_root_e_w, node_name, "", &undo_scope);
                 }
 
                 tm_the_truth_api->commit(tt, node_root_e_w, undo_scope);
@@ -267,7 +274,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
                 tm_the_truth_object_o* node_type_e_w = tm_the_truth_api->write(tt, node_type_e);
                 tm_the_truth_api->set_string(tt, node_type_e_w, TM_TT_PROP__ENTITY__NAME, "type");
 
-                add_node_cmp(tt, node_type_e_w, node_type, &undo_scope);
+                add_node_cmp(tt, node_type_e_w, "type", node_type, &undo_scope);
 
                 tm_the_truth_api->commit(tt, node_type_e_w, undo_scope);
                 tm_scene_common_api->place_entity(tt, node_type_e, local_transform, node_root_e, undo_scope);
@@ -286,7 +293,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 						tm_config_item_t* node_io_arr;
 						cd->to_array(cd->inst, node_io_arrs[0], &node_io_arr);
 						int next_id = (int)cd->to_number(cd->inst, node_io_arr[2]);
-						add_node_cmp(tt, line_next_e_w, int_to_s(next_id), &undo_scope);
+						add_node_cmp(tt, line_next_e_w, "next", int_to_s(next_id), &undo_scope);
 
 						tm_the_truth_api->commit(tt, line_next_e_w, undo_scope);
 						tm_scene_common_api->place_entity(tt, next_e, local_transform, node_root_e, undo_scope);
@@ -304,7 +311,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 					tm_the_truth_object_o* node_char_e_w = tm_the_truth_api->write(tt, node_char_e);
 					tm_the_truth_api->set_string(tt, node_char_e_w, TM_TT_PROP__ENTITY__NAME, "character");
 
-					add_node_cmp(tt, node_char_e_w, node_char_name, &undo_scope);
+					add_node_cmp(tt, node_char_e_w, "character", node_char_name, &undo_scope);
 
 					tm_the_truth_api->commit(tt, node_char_e_w, undo_scope);
 					tm_scene_common_api->place_entity(tt, node_char_e, local_transform, node_root_e, undo_scope);
@@ -313,6 +320,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 					tm_tt_id_t node_lines_e = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope);
 					tm_the_truth_object_o* node_lines_e_w = tm_the_truth_api->write(tt, node_lines_e);
 					tm_the_truth_api->set_string(tt, node_lines_e_w, TM_TT_PROP__ENTITY__NAME, "lines");
+                    add_node_cmp(tt, node_lines_e_w, "lines", "", &undo_scope);
                     tm_the_truth_api->commit(tt, node_lines_e_w, undo_scope);
                     tm_scene_common_api->place_entity(tt, node_lines_e, local_transform, node_root_e, undo_scope);
 
@@ -325,7 +333,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 						tm_the_truth_object_o* node_line_e_w = tm_the_truth_api->write(tt, node_line_e);
 						tm_the_truth_api->set_string(tt, node_line_e_w, TM_TT_PROP__ENTITY__NAME, int_to_s(line_idx));
 
-                        add_node_cmp(tt, node_line_e_w, cd->to_string(cd->inst, lines[line_idx]), &undo_scope);
+                        add_node_cmp(tt, node_line_e_w, int_to_s(line_idx), cd->to_string(cd->inst, lines[line_idx]), &undo_scope);
 
 						tm_the_truth_api->commit(tt, node_line_e_w, undo_scope);
 						tm_scene_common_api->place_entity(tt, node_line_e, local_transform, node_lines_e, undo_scope);
@@ -340,7 +348,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
 							tm_config_item_t* node_io_arr;
 							cd->to_array(cd->inst, node_io_arrs[line_idx], &node_io_arr);
 							int line_next = (int)cd->to_number(cd->inst, node_io_arr[2]);
-							add_node_cmp(tt, line_next_e_w, int_to_s(line_next), &undo_scope);
+							add_node_cmp(tt, line_next_e_w, "next", int_to_s(line_next), &undo_scope);
 
 							tm_the_truth_api->commit(tt, line_next_e_w, undo_scope);
 							tm_scene_common_api->place_entity(tt, line_next_e, local_transform, node_line_e, undo_scope);
@@ -355,6 +363,7 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
         tm_tt_id_t char_root_e = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope);
         tm_the_truth_object_o* char_root_e_w = tm_the_truth_api->write(tt, char_root_e);
         tm_the_truth_api->set_string(tt, char_root_e_w, TM_TT_PROP__ENTITY__NAME, "characters");
+        add_node_cmp(tt, char_root_e_w, "characters", "", &undo_scope);
         tm_the_truth_api->commit(tt, char_root_e_w, undo_scope);
         tm_scene_common_api->place_entity(tt, char_root_e, local_transform, entity, undo_scope);
 
@@ -364,10 +373,11 @@ tm_tt_id_t create_entity(struct tm_asset_scene_o* inst, struct tm_the_truth_o* t
             const char* char_name = cd->to_string(cd->inst, cd->object_get(cd->inst, char_vals[i], TM_STATIC_HASH("name", 0xd4c943cba60c270bULL)));
             tm_tt_id_t char_e = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope);
             tm_the_truth_object_o* char_e_w = tm_the_truth_api->write(tt, char_e);
-            tm_the_truth_api->set_string(tt, char_e_w, TM_TT_PROP__ENTITY__NAME, cd->to_string(cd->inst, char_keys[i]));
+            const char* char_id = cd->to_string(cd->inst, char_keys[i]);
+            tm_the_truth_api->set_string(tt, char_e_w, TM_TT_PROP__ENTITY__NAME, char_id);
 
             // add component
-            add_node_cmp(tt, char_e_w, char_name, &undo_scope);
+            add_node_cmp(tt, char_e_w, char_id, char_name, &undo_scope);
 
             tm_the_truth_api->commit(tt, char_e_w, undo_scope);
             tm_scene_common_api->place_entity(tt, char_e, local_transform, char_root_e, undo_scope);
