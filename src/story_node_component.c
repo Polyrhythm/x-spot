@@ -25,13 +25,11 @@ static void truth__create_types(struct tm_the_truth_o* tt)
 {
     tm_the_truth_property_definition_t custom_component_properties[] = {
         [TM_TT_PROP__STORY_NODE_COMPONENT__CONTENT] = { "content", TM_THE_TRUTH_PROPERTY_TYPE_STRING },
-        [TM_TT_PROP__STORY_NODE_COMPONENT__CHARACTER] = { "character", TM_THE_TRUTH_PROPERTY_TYPE_STRING },
     };
 
     const tm_tt_type_t custom_component_type = tm_the_truth_api->create_object_type(tt, TM_TT_TYPE__STORY_NODE_COMPONENT, custom_component_properties, TM_ARRAY_COUNT(custom_component_properties));
     const tm_tt_id_t default_object = tm_the_truth_api->quick_create_object(tt, TM_TT_NO_UNDO_SCOPE, TM_TT_TYPE_HASH__STORY_NODE_COMPONENT,
-        TM_TT_PROP__STORY_NODE_COMPONENT__CONTENT, "",
-        TM_TT_PROP__STORY_NODE_COMPONENT__CHARACTER, "", -1);
+        TM_TT_PROP__STORY_NODE_COMPONENT__CONTENT, "", -1);
     tm_the_truth_api->set_default_object(tt, custom_component_type, default_object);
 
     tm_the_truth_api->set_aspect(tt, custom_component_type, TM_CI_EDITOR_UI, editor_aspect);
@@ -43,7 +41,6 @@ static bool component__load_asset(tm_component_manager_o* man, tm_entity_t e, vo
     const tm_the_truth_object_o* asset_r = tm_tt_read(tt, asset);
 
     c->content = tm_str(tm_the_truth_api->get_string(tt, asset_r, TM_TT_PROP__STORY_NODE_COMPONENT__CONTENT));
-    c->character = tm_str(tm_the_truth_api->get_string(tt, asset_r, TM_TT_PROP__STORY_NODE_COMPONENT__CHARACTER));
 
     return true;
 }

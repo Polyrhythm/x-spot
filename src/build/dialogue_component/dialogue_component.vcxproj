@@ -123,12 +123,16 @@
     <ClCompile Include="..\..\dialogue_loader.c" />
     <ClCompile Include="..\..\story_asset.c" />
     <ClCompile Include="..\..\story_node_component.c" />
+    <ClCompile Include="..\..\story_node_graph_nodes.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\dialogue_component.h" />
     <ClInclude Include="..\..\dialogue_loader.h" />
     <ClInclude Include="..\..\story_asset.h" />
     <ClInclude Include="..\..\story_node_component.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\story_node_graph_nodes.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

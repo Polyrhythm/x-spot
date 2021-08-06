@@ -61,6 +61,7 @@ struct tm_scene_common_api* tm_scene_common_api;
 extern void load_dialogue_component(struct tm_api_registry_api* reg, bool load);
 extern void load_story_asset(struct tm_api_registry_api* reg, bool load);
 extern void load_story_node_component(struct tm_api_registry_api* reg, bool load);
+extern void load_story_node_graph_nodes(struct tm_api_registry_api* reg, bool load);
 
 TM_DLL_EXPORT void tm_load_plugin(struct tm_api_registry_api* reg, bool load)
 {
@@ -84,11 +85,10 @@ TM_DLL_EXPORT void tm_load_plugin(struct tm_api_registry_api* reg, bool load)
     tm_scene_common_api = reg->get(TM_SCENE_COMMON_API_NAME);
     tm_transform_component_api = reg->get(TM_TRANSFORM_COMPONENT_API_NAME);
 
-    tm_graph_interpreter_api = reg->get(TM_GRAPH_INTERPRETER_API_NAME);
-
     tm_logger_api->printf(TM_LOG_TYPE_INFO, "hello dialogue world");
     
     load_dialogue_component(reg, load);
     load_story_asset(reg, load);
     load_story_node_component(reg, load);
+    load_story_node_graph_nodes(reg, load);
 }

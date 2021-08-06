@@ -1,4 +1,5 @@
-﻿  dialogue_component.c
+﻿  story_node_graph_nodes.c
+     Creating library ..\..\bin\Debug\tm_dialogue_component.lib and object ..\..\bin\Debug\tm_dialogue_component.exp
   dialogue_component.vcxproj -> E:\machinery\projects\x_spot\src\bin\Debug\tm_dialogue_component.dll
   E:\machinery\projects\x_spot\src\build\dialogue_component\..\..\bin\Debug\tm_dialogue_component.dll
   1 File(s) copied

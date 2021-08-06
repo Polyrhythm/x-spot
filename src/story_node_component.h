@@ -7,11 +7,9 @@
 
 enum {
 	TM_TT_PROP__STORY_NODE_COMPONENT__CONTENT,
-	TM_TT_PROP__STORY_NODE_COMPONENT__CHARACTER,
 };
 
 typedef struct tm_story_node_component_t
 {
 	tm_str_t content;
-	tm_str_t character;
 } tm_story_node_component_t;

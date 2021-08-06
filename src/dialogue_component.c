@@ -390,24 +390,10 @@ static void component__create(struct tm_entity_context_o* ctx)
     tm_entity_api->register_component(ctx, &component);
 }
 
-static void create_underlings(tm_component_manager_o* man, tm_entity_context_o* ctx)
-{
-    tm_the_truth_o* tt = tm_entity_api->the_truth(ctx);
-    const tm_tt_undo_scope_t undo_scope = tm_the_truth_api->create_undo_scope(tt, TM_LOCALIZE_LATER("Create Entity from Dialogue Component"));
-    const tm_tt_type_t entity_type = tm_the_truth_api->optional_object_type_from_name_hash(tt, TM_TT_TYPE_HASH__ENTITY);
-    const tm_tt_id_t entity = tm_the_truth_api->create_object_of_type(tt, entity_type, undo_scope);
-    tm_the_truth_object_o* entity_w = tm_the_truth_api->write(tt, entity);
-    tm_the_truth_api->set_string(tt, entity_w, TM_TT_PROP__ENTITY__NAME, "bob");
-
-    tm_the_truth_api->commit(tt, entity_w, undo_scope);
-}
-
 // Runs on (dialogue_component, transform_component)
 static void engine_update__dialogue_component(tm_engine_o* inst, tm_engine_update_set_t* data)
 {
-    struct tm_entity_context_o* ctx = (struct tm_entity_context_o*)inst;
-
-    tm_logger_api->printf(TM_LOG_TYPE_INFO, "holy fuck");
+    //struct tm_entity_context_o* ctx = (struct tm_entity_context_o*)inst;
 
     double t = 0;
     for (const tm_entity_blackboard_value_t* bb = data->blackboard_start; bb != data->blackboard_end; ++bb) {
@@ -415,19 +401,7 @@ static void engine_update__dialogue_component(tm_engine_o* inst, tm_engine_updat
             t = bb->double_value;
     }
 
-    tm_component_type_t dialogue_type = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__DIALOGUE_COMPONENT);
-
     for (tm_engine_update_array_t* a = data->arrays; a < data->arrays + data->num_arrays; ++a) {
-        struct tm_dialogue_component_t* dialogue_component = a->components[0];
-        tm_component_manager_o* man = tm_entity_api->component_manager(ctx, dialogue_type);
-        if (!man->is_parsed)
-        {
-            tm_logger_api->printf(TM_LOG_TYPE_INFO, "dialogue component continue");
-            man->is_parsed = true;
-            continue;
-        }
-
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "parse that shit");
 
         for (uint32_t i = 0; i < a->n; ++i) {
             //const float y = dialogue_component[i].y0 + dialogue_component[i].amplitude * sinf((float)t * dialogue_component[i].frequency);
@@ -440,11 +414,12 @@ static void engine_update__dialogue_component(tm_engine_o* inst, tm_engine_updat
 
 static bool engine_filter__dialogue_component(tm_engine_o* inst, const tm_component_type_t* components, uint32_t num_components, const tm_component_mask_t* mask)
 {
-    struct tm_entity_context_o* ctx = (struct tm_entity_context_o*)inst;
-    tm_component_type_t dialogue_type = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__DIALOGUE_COMPONENT);
-    tm_component_manager_o* man = tm_entity_api->component_manager(ctx, dialogue_type);
-    return !man->is_parsed;
+    return false;
 }
+
+static struct tm_dialogue_component_api* tm_dialogue_component_api = &(struct tm_dialogue_component_api) {
+    .toot = toot,
+};
 
 static void component__register_engine(struct tm_entity_context_o* ctx)
 {
@@ -478,4 +453,6 @@ static tm_simulate_entry_i simulate_entry_i = {
     tm_add_or_remove_implementation(reg, load, TM_ENTITY_CREATE_COMPONENT_INTERFACE_NAME, component__create);
     tm_add_or_remove_implementation(reg, load, TM_ENTITY_SIMULATION_REGISTER_ENGINES_INTERFACE_NAME, component__register_engine);
     tm_add_or_remove_implementation(reg, load, TM_SIMULATE_ENTRY_INTERFACE_NAME, &simulate_entry_i);
+
+    tm_set_or_remove_api(reg, load, TM_DIALOGUE_COMPONENT_API, tm_dialogue_component_api);
 }
