@@ -6,6 +6,7 @@ struct tm_dialogue_component_api* tm_dialogue_component_api;
 
 #include <foundation/api_registry.h>
 #include <foundation/api_types.h>
+#include <foundation/carray.inl>
 #include <foundation/localizer.h>
 #include <foundation/log.h>
 #include <foundation/macros.h>
@@ -40,7 +41,7 @@ static tm_entity_t get_child_node(tm_entity_context_o* ctx, tm_entity_t root, co
     TM_INIT_TEMP_ALLOCATOR(ta);
 
     tm_entity_t* children = tm_entity_api->children(ctx, root, ta);
-    int num_children = TM_ARRAY_COUNT(children);
+    int num_children = tm_carray_size(children);
     for (int i = 0; i < num_children; ++i)
     {
         const char* node_name = get_name(ctx, children[i]);
@@ -50,7 +51,7 @@ static tm_entity_t get_child_node(tm_entity_context_o* ctx, tm_entity_t root, co
         }
     }
 
-    tm_logger_api->printf(TM_LOG_TYPE_ERROR, "Child not found!");
+    tm_logger_api->printf(TM_LOG_TYPE_ERROR, "Child name not found: %s", name);
     return root;
 
     TM_SHUTDOWN_TEMP_ALLOCATOR(ta);
@@ -72,7 +73,7 @@ static tm_entity_t get_child_by_type(tm_entity_context_o* ctx, tm_entity_t root,
         }
     }
 
-    tm_logger_api->printf(TM_LOG_TYPE_ERROR, "Child not found!");
+    tm_logger_api->printf(TM_LOG_TYPE_ERROR, "Child type not found: %s", type);
     return root;
 
     TM_SHUTDOWN_TEMP_ALLOCATOR(ta);
@@ -117,13 +118,15 @@ GGN_NODE_QUERY();
 static inline void get_next_node_graph(tm_graph_interpreter_context_t* ctx, tm_entity_t scene_root, tm_entity_t current_node, tm_entity_t* next_node)
 {
     tm_entity_context_o* entity_ctx = private__get_entity_context(ctx);
-    const char* parent_name = get_name(entity_ctx, tm_entity_api->parent(ctx, current_node));
+    tm_entity_t parent_node = tm_entity_api->parent(entity_ctx, current_node);
+    const char* parent_name = get_name(entity_ctx, parent_node);
 
     // go through entry first if at root
     if (tm_strcmp_ignore_case(parent_name, "scenes") == 0)
     {
-        tm_entity_t entry_node = get_child_node(entity_ctx, scene_root, "entry");
+        tm_entity_t entry_node = get_child_by_type(entity_ctx, scene_root, "entry");
         *next_node = get_next_node(entity_ctx, entry_node, scene_root);
+        return;
     }
 
     *next_node = get_next_node(entity_ctx, current_node, scene_root);
