@@ -62,6 +62,7 @@ static void task__import_story(void* data, uint64_t task_id)
     const struct tm_asset_io_import* args = &task->args;
     const char* json_file = task->file;
     tm_the_truth_o* tt = args->tt;
+    tm_logger_api->printf(TM_LOG_TYPE_INFO, "import beep");
 
     tm_file_stat_t stat = tm_os_api->file_system->stat(json_file);
     if (!stat.exists)

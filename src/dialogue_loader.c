@@ -33,11 +33,13 @@
 #include <plugins/the_machinery_shared/component_interfaces/editor_ui_interface.h>
 #include <plugins/the_machinery_shared/scene_common.h>
 
+#include <plugins/creation_graph/creation_graph.h>
 #include <plugins/editor_views/graph.h>
 #include <plugins/graph_interpreter/graph_component.h>
 #include <plugins/graph_interpreter/graph_node_helpers.inl>
 #include <plugins/graph_interpreter/graph_node_macros.h>
 #include <plugins/simulate/simulate_entry.h>
+#include <plugins/ui/ui.h>
 
 struct tm_config_api* tm_config_api;
 struct tm_entity_api* tm_entity_api;
@@ -57,14 +59,19 @@ struct tm_path_api* tm_path_api;
 struct tm_allocator_api* tm_allocator_api;
 struct tm_task_system_api* task_system;
 struct tm_scene_common_api* tm_scene_common_api;
+struct tm_creation_graph_api* tm_creation_graph_api;
+struct tm_the_truth_common_types_api* tm_the_truth_common_types_api;
+struct tm_api_registry_api* tm_global_api_registry;
 
 extern void load_dialogue_component(struct tm_api_registry_api* reg, bool load);
 extern void load_story_asset(struct tm_api_registry_api* reg, bool load);
 extern void load_story_node_component(struct tm_api_registry_api* reg, bool load);
 extern void load_story_node_graph_nodes(struct tm_api_registry_api* reg, bool load);
+extern void load_story_text_ui_component(struct tm_api_registry_api* reg, bool load);
 
 TM_DLL_EXPORT void tm_load_plugin(struct tm_api_registry_api* reg, bool load)
 {
+    tm_global_api_registry = reg;
     tm_entity_api = reg->get(TM_ENTITY_API_NAME);
     tm_transform_component_api = reg->get(TM_TRANSFORM_COMPONENT_API_NAME);
     tm_the_truth_api = reg->get(TM_THE_TRUTH_API_NAME);
@@ -84,6 +91,9 @@ TM_DLL_EXPORT void tm_load_plugin(struct tm_api_registry_api* reg, bool load)
     task_system = reg->get(TM_TASK_SYSTEM_API_NAME);
     tm_scene_common_api = reg->get(TM_SCENE_COMMON_API_NAME);
     tm_transform_component_api = reg->get(TM_TRANSFORM_COMPONENT_API_NAME);
+    tm_ui_api = reg->get(TM_UI_API_NAME);
+    tm_creation_graph_api = reg->get(TM_CREATION_GRAPH_API_NAME);
+    tm_the_truth_common_types_api = reg->get(TM_THE_TRUTH_COMMON_TYPES_API_NAME);
 
     tm_logger_api->printf(TM_LOG_TYPE_INFO, "hello dialogue world");
     
@@ -91,4 +101,5 @@ TM_DLL_EXPORT void tm_load_plugin(struct tm_api_registry_api* reg, bool load)
     load_story_asset(reg, load);
     load_story_node_component(reg, load);
     load_story_node_graph_nodes(reg, load);
+    load_story_text_ui_component(reg, load);
 }

@@ -43,7 +43,7 @@ filter { "system:windows", "options:clang" }
 
 filter "platforms:Win64"
     defines { "TM_OS_WINDOWS", "_CRT_SECURE_NO_WARNINGS" }
-    includedirs { "$(TM_SDK_DIR)/headers" }
+    includedirs { "$(TM_SDK_DIR)" }
     staticruntime "On"
     architecture "x64"
     prebuildcommands {
@@ -67,7 +67,7 @@ filter "platforms:Win64"
 
 filter {"platforms:Linux"}
     defines { "TM_OS_LINUX", "TM_OS_POSIX" }
-    includedirs { "$(TM_SDK_DIR)/headers" }
+    includedirs { "$(TM_SDK_DIR)" }
     architecture "x64"
     toolset "clang"
     buildoptions {

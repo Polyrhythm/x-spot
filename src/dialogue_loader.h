@@ -21,4 +21,7 @@ extern struct tm_allocator_api* tm_allocator_api;
 extern struct tm_task_system_api* task_system;
 extern struct tm_scene_common_api* tm_scene_common_api;
 extern struct tm_transform_component_api* tm_transform_component_api;
-
+extern struct tm_ui_api* tm_ui_api;
+extern struct tm_creation_graph_api* tm_creation_graph_api;
+extern struct tm_the_truth_common_types_api* tm_the_truth_common_types_api;
+extern struct tm_api_registry_api* tm_global_api_registry;

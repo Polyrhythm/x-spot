@@ -25,6 +25,7 @@
 #include <foundation/the_truth_types.h>
 #include <foundation/undo.h>
 
+#include <plugins/the_machinery_shared/component_interfaces/editor_ui_interface.h>
 #include <plugins/editor_views/asset_browser.h>
 #include <plugins/editor_views/properties.h>
 #include <plugins/entity/entity.h>
@@ -33,11 +34,14 @@
 #include <plugins/the_machinery_shared/component_interfaces/editor_ui_interface.h>
 #include <plugins/the_machinery_shared/scene_common.h>
 
+#include <plugins/creation_graph/creation_graph.h>
 #include <plugins/editor_views/graph.h>
 #include <plugins/graph_interpreter/graph_component.h>
 #include <plugins/graph_interpreter/graph_node_helpers.inl>
 #include <plugins/graph_interpreter/graph_node_macros.h>
 #include <plugins/simulate/simulate_entry.h>
+#include <plugins/ui/ui.h>
+#include <plugins/ui/ui_custom.h>
 
 #include "dialogue_component.h"
 
@@ -59,6 +63,8 @@ struct tm_path_api* tm_path_api;
 struct tm_allocator_api* tm_allocator_api;
 struct tm_task_system_api* task_system;
 struct tm_scene_common_api* tm_scene_common_api;
+struct tm_ui_api* tm_ui_api;
+struct tm_ui_renderer_api* tm_ui_renderer_api;
 
 enum {
     TM_TT_PROP__DIALOGUE_COMPONENT__STORY_ASSET,
@@ -66,33 +72,14 @@ enum {
 
 struct tm_dialogue_component_t {
     char* text;
+    bool should_notify;
     uint64_t size;
-    bool is_parsed;
 };
 
 typedef struct tm_component_manager_o {
     tm_entity_context_o* ctx;
     tm_allocator_i allocator;
-
-    bool is_parsed;
-
-    uint64_t scene_idx;
-
-    tm_config_i* cd;
-    tm_config_item_t characters;
-    tm_config_item_t scene;
-    tm_config_item_t nodes;
-    tm_config_item_t map;
 } tm_component_manager_o;
-
-static char* int_to_s(int i)
-{
-    int length = snprintf(NULL, 0, "%d", i);
-    char* str = malloc(length + 1);
-    snprintf(str, length + 1, "%d", i);
-
-    return str;
-}
 
 static const char* component__category(void)
 {
@@ -100,7 +87,7 @@ static const char* component__category(void)
 }
 
 static tm_ci_editor_ui_i* editor_aspect = &(tm_ci_editor_ui_i){
-    .category = component__category
+    .category = component__category,
 };
 
 static float properties__component_custom_ui(struct tm_properties_ui_args_t* args, tm_rect_t item_rect, tm_tt_id_t object, uint32_t indent)
@@ -139,111 +126,6 @@ static void toot(void)
 
 // -- end API functions
 
-static int get_next(tm_component_manager_o* man, const char* node_idx)
-{
-    tm_config_i* cd = man->cd;
-    tm_config_item_t* io_items;
-    tm_config_item_t map_node = cd->object_get(cd->inst, man->map, tm_murmur_hash_string(node_idx));
-    uint32_t io_count = cd->to_array(cd->inst, cd->object_get(cd->inst, map_node, TM_STATIC_HASH("io", 0x2c8639e08c0f0fddULL)), &io_items);
-
-    if (io_count < 1)
-    {
-        return -1;
-    }
-
-    tm_config_item_t* io_inner_items;
-    cd->to_array(cd->inst, io_items[0], &io_inner_items);
-
-    return (int)cd->to_number(cd->inst, io_inner_items[2]);
-}
-
-typedef enum d_type
-{
-    D_NULL,
-    ENTRY,
-    DIALOG,
-    CONTENT,
-} d_type;
-
-typedef struct d_data
-{
-    const char* character;
-    const char* line;
-    d_type type;
-} d_data;
-
-static void draw_text(const char* text)
-{
-
-}
-
-static d_data get_text(tm_component_manager_o* man, tm_config_item_t* currnode, int line_idx)
-{
-    tm_config_i* cd = man->cd;
-
-    tm_config_item_t data = cd->object_get(cd->inst, *currnode, TM_STATIC_HASH("data", 0x8fd0d44d20650b68ULL));
-    const char* type = cd->to_string(cd->inst, cd->object_get(cd->inst, *currnode, TM_STATIC_HASH("type", 0xa21bd0e01ac8f01fULL)));
-
-    d_data res;
-    res.character = "";
-    res.line = "";
-    res.type = D_NULL;
-
-    if (tm_strcmp_ignore_case(type, "content") == 0)
-    {
-        res.line = cd->to_string(cd->inst, cd->object_get(cd->inst, data, TM_STATIC_HASH("content", 0x8f0e5bf58c4edcf6ULL)));
-        res.type = CONTENT;
-
-        return res;
-    }
-    else if (tm_strcmp_ignore_case(type, "dialog") == 0)
-    {
-        tm_config_item_t* lines;
-        cd->to_array(cd->inst, cd->object_get(cd->inst, data, TM_STATIC_HASH("lines", 0xfd431731eedb241dULL)), &lines);
-
-        res.line = cd->to_string(cd->inst, lines[line_idx]);
-        
-        int char_idx = (int)cd->to_number(cd->inst, cd->object_get(cd->inst, data, TM_STATIC_HASH("character", 0x394e4fef3b347ba9ULL)));
-        tm_config_item_t character = cd->object_get(cd->inst, man->characters, tm_murmur_hash_string(int_to_s(char_idx)));
-        res.character = cd->to_string(cd->inst, cd->object_get(cd->inst, character, TM_STATIC_HASH("name", 0xd4c943cba60c270bULL)));
-
-        res.type = DIALOG;
-
-        return res;
-    }
-
-    return res;
-}
-
-static void start_dialogue(tm_component_manager_o* man)
-{
-    tm_config_i* cd = man->cd;
-
-    int entry = (int)cd->to_number(cd->inst, cd->object_get(cd->inst, man->scene, TM_STATIC_HASH("entry", 0xcc88228c8069a76bULL)));
-
-    int step = 1;
-    int next = get_next(man, int_to_s(entry));
-	tm_config_item_t currnode = cd->object_get(cd->inst, man->nodes, tm_murmur_hash_string(int_to_s(entry)));
-    while (next >= 0)
-    {
-        if (step > 1)
-        {
-			currnode = cd->object_get(cd->inst, man->nodes, tm_murmur_hash_string(int_to_s(next)));
-			next = get_next(man, int_to_s(next));
-        }
-
-        d_data data = get_text(man, &currnode, 0);
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "step: %d", step);
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "character: %s", data.character);
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "text: %s", data.line);
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "type: %d", data.type);
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "next: %d", next);
-        tm_logger_api->printf(TM_LOG_TYPE_INFO, "---------\n");
-
-        step++;
-    }
-}
-
 typedef struct tm_simulate_state_o
 {
     float test_float;
@@ -251,61 +133,11 @@ typedef struct tm_simulate_state_o
 
 static tm_simulate_state_o* start(tm_simulate_start_args_t* args)
 {
-    tm_logger_api->printf(TM_LOG_TYPE_INFO, "start");
-
-    tm_simulate_state_o* state = tm_alloc(args->allocator, sizeof(*state));
-    *state = (tm_simulate_state_o){
-        .test_float = 0,
+    tm_simulate_state_o state = (tm_simulate_state_o){
+        .test_float = 1.0f,
     };
 
-    TM_INIT_TEMP_ALLOCATOR(ta);
-    tm_entity_context_o* e_ctx = args->entity_ctx;
-    tm_component_type_t type = tm_entity_api->lookup_component_type(e_ctx, TM_TT_TYPE_HASH__DIALOGUE_COMPONENT);
-    tm_component_manager_o* man = tm_entity_api->component_manager(e_ctx, type);
-    const char* file = "E:/machinery/projects/x_spot/data/lol.json";
-    tm_file_o f = tm_os_api->file_io->open_input(file);
-    tm_file_stat_t stat = tm_os_api->file_system->stat(file);
-
-    char* data = tm_temp_alloc(ta, stat.size);
-    tm_os_api->file_io->read(f, data, stat.size);
-    tm_os_api->file_io->close(f);
-
-    tm_allocator_i allocator;
-    tm_temp_allocator_api->allocator(&allocator, ta);
-    tm_config_i* cd = tm_config_api->create(&allocator);
-    man->cd = cd;
-    tm_json_parse_info_t* pi = tm_json_api->parse_with_line_info(data, cd, 0, ta);
-
-    if (!pi->success)
-    {
-        tm_logger_api->printf(TM_LOG_TYPE_ERROR, "Error: %s", pi->error);
-        return state;
-    }
-
-    tm_config_item_t root = cd->root(cd->inst);
-    tm_config_item_t resources = cd->object_get(cd->inst, root, TM_STATIC_HASH("resources", 0xea2d07788c0118deULL));
-    man->characters = cd->object_get(cd->inst, resources, TM_STATIC_HASH("characters", 0xa94318105571cca4ULL));
-    tm_config_item_t scenes = cd->object_get(cd->inst, resources, TM_STATIC_HASH("scenes", 0x9e01cdce1780b727ULL));
-    man->nodes = cd->object_get(cd->inst, resources, TM_STATIC_HASH("nodes", 0x6ea600aa4b4a3195ULL));
-
-    tm_config_item_t* scene_keys;
-    tm_config_item_t* scene_vals;
-    uint32_t scene_count = cd->to_object(cd->inst, scenes, &scene_keys, &scene_vals);
-
-    if (man->scene_idx > scene_count - 1)
-    {
-        tm_logger_api->printf(TM_LOG_TYPE_ERROR, "Not enough scenes!");
-        return state;
-    }
-
-    man->scene = scene_vals[man->scene_idx];
-
-    man->map = cd->object_get(cd->inst, man->scene, TM_STATIC_HASH("map", 0xda34211fe66bc38bULL));
-
-    start_dialogue(man);
-    TM_SHUTDOWN_TEMP_ALLOCATOR(ta);
-
-    return state;
+    return &state;
 }
 
 static void stop(tm_simulate_state_o* state)
@@ -349,6 +181,8 @@ static bool component__load_asset(tm_component_manager_o* man, tm_entity_t e, vo
     c->size = buffer.size;
     memcpy(c->text, buffer.data, buffer.size);
 
+    c->should_notify = false;
+
     return true;
 }
 
@@ -375,7 +209,6 @@ static void component__create(struct tm_entity_context_o* ctx)
     *manager = (tm_component_manager_o){
         .ctx = ctx,
         .allocator = a,
-        .is_parsed = false,
     };
 
 	tm_component_i component = {
@@ -394,27 +227,107 @@ static void component__create(struct tm_entity_context_o* ctx)
 static void engine_update__dialogue_component(tm_engine_o* inst, tm_engine_update_set_t* data)
 {
     //struct tm_entity_context_o* ctx = (struct tm_entity_context_o*)inst;
-
-    double t = 0;
+    tm_ui_o* ui;
+    tm_rect_t* rect;
+    tm_ui_style_t* style;
     for (const tm_entity_blackboard_value_t* bb = data->blackboard_start; bb != data->blackboard_end; ++bb) {
-        if (TM_STRHASH_EQUAL(bb->id, TM_ENTITY_BB__TIME))
-            t = bb->double_value;
-    }
+        if (TM_STRHASH_EQUAL(bb->id, TM_ENTITY_BB__UI))
+        {
+            ui = bb->ptr_value;
+        }
 
-    for (tm_engine_update_array_t* a = data->arrays; a < data->arrays + data->num_arrays; ++a) {
+        if (TM_STRHASH_EQUAL(bb->id, TM_ENTITY_BB__UI_RECT))
+        {
+            rect = bb->ptr_value;
+        }
 
-        for (uint32_t i = 0; i < a->n; ++i) {
-            //const float y = dialogue_component[i].y0 + dialogue_component[i].amplitude * sinf((float)t * dialogue_component[i].frequency);
+        if (TM_STRHASH_EQUAL(bb->id, TM_ENTITY_BB__UI_STYLE))
+        {
+            style = bb->ptr_value;
         }
     }
 
-    //tm_entity_api->notify(ctx, data->engine->components[1], mod_transform, (uint32_t)tm_carray_size(mod_transform));
+    tm_rect_t r = (tm_rect_t){
+        .h = 50,
+        .w = 200,
+        .x = 400,
+        .y = 400,
+    };
 
+    const tm_ui_button_t button = (tm_ui_button_t){
+        .text = "step",
+        .rect = r,
+    };
+
+    
+    bool clicked = tm_ui_api->button(ui, style, &button);
+
+    const char* curr_content = "lol";
+    const char* lines[MAX_LINES] = {"", "", "", ""};
+
+    for (tm_engine_update_array_t* a = data->arrays; a < data->arrays + data->num_arrays; ++a) {
+        struct tm_graph_component_t* graph_cmp = a->components[1];
+
+        for (uint32_t i = 0; i < a->n; ++i)
+        {
+            curr_content = tm_graph_interpreter_api->read_variable(graph_cmp->gr, TM_STATIC_HASH("curr_content", 0xc6a0c239392ec385ULL).u64).data;
+
+            lines[0] = tm_graph_interpreter_api->read_variable(graph_cmp->gr, TM_STATIC_HASH("line0", 0xc247fedbdde616d1ULL).u64).data;
+            lines[1] = tm_graph_interpreter_api->read_variable(graph_cmp->gr, TM_STATIC_HASH("line1", 0x97c85cd1b0cc9372ULL).u64).data;
+            lines[2] = tm_graph_interpreter_api->read_variable(graph_cmp->gr, TM_STATIC_HASH("line2", 0x56c7ef7abb5f6399ULL).u64).data;
+            lines[3] = tm_graph_interpreter_api->read_variable(graph_cmp->gr, TM_STATIC_HASH("line3", 0x22faf8dd917b6a7aULL).u64).data;
+
+            if (clicked)
+            {
+                tm_graph_interpreter_api->trigger_event(graph_cmp->gr, TM_STATIC_HASH("story_step", 0xb7f87569121db7adULL));
+            }
+        }
+    }
+
+    const tm_rect_t content_rect = (tm_rect_t){
+        .x = 10,
+        .y = 10,
+        .h = 10,
+        .w = 10,
+    };
+
+    const tm_ui_text_t content_text = (tm_ui_text_t){
+        .text = curr_content,
+        .rect = content_rect,
+    };
+
+    tm_ui_api->text(ui, style, &content_text);
+
+    tm_rect_t line_rect = (tm_rect_t){
+        .x = 10,
+        .y = 40,
+        .h = 20,
+        .w = 20,
+    };
+
+    for (int i = 0; i < MAX_LINES; ++i)
+    {
+        line_rect.y += 20;
+        //uint8_t blue = tm_ui_api->is_hovering(ui, line_rect, style->clip) ? 0 : 255;
+        tm_color_srgb_t clr = (tm_color_srgb_t){
+            .a = 255,
+            .r = 255,
+            .g = 255,
+            .b = 255,
+        };
+        const tm_ui_text_t line_text = (tm_ui_text_t){
+            .text = lines[i],
+            .rect = line_rect,
+            .color = &clr,
+        };
+        
+        tm_ui_api->text(ui, style, &line_text);
+    }
 }
 
 static bool engine_filter__dialogue_component(tm_engine_o* inst, const tm_component_type_t* components, uint32_t num_components, const tm_component_mask_t* mask)
 {
-    return false;
+    return tm_entity_mask_has_component(mask, components[0]) && tm_entity_mask_has_component(mask, components[1]);
 }
 
 static struct tm_dialogue_component_api* tm_dialogue_component_api = &(struct tm_dialogue_component_api) {
@@ -424,13 +337,13 @@ static struct tm_dialogue_component_api* tm_dialogue_component_api = &(struct tm
 static void component__register_engine(struct tm_entity_context_o* ctx)
 {
     const tm_component_type_t dialogue_component = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__DIALOGUE_COMPONENT);
-    const tm_component_type_t transform_component = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__TRANSFORM_COMPONENT);
+    const tm_component_type_t graph_component = tm_entity_api->lookup_component_type(ctx, TM_TT_TYPE_HASH__GRAPH_COMPONENT);
 
     const tm_engine_i dialogue_component_engine = {
-        .ui_name = "Dialogue Component",
+        .ui_name = TM_LOCALIZE_LATER("Engine: Dialogue + Graph"),
         .hash  = TM_STATIC_HASH("DIALOGUE_COMPONENT", 0xc6cec009ae9b950aULL),
         .num_components = 2,
-        .components = { dialogue_component, transform_component },
+        .components = { dialogue_component, graph_component },
         .writes = { false, true },
         .update = engine_update__dialogue_component,
         .filter = engine_filter__dialogue_component,

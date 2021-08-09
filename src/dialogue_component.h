@@ -14,6 +14,7 @@
 #define TM_TT_TYPE__DIALOGUE_STORY "tm_dialogue_story"
 #define TM_TT_TYPE_HASH__DIALOGUE_STORY TM_STATIC_HASH("tm_dialogue_story", 0xfbf20104546ea8bfULL)
 
+#define MAX_LINES 4
 
 struct tm_dialogue_component_api
 {
